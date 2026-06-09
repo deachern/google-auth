@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GoogleStyle Auth Flow</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;background:#f1f3f4;margin:0;display:flex;justify-content:center;align-items:center;height:100vh}
+  .card{background:#fff;width:360px;padding:32px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1);text-align:center}
+  .logo{width:92px;margin:auto;margin-bottom:24px;display:block}
+  h2{font-size:24px;margin:0 0 12px;color:#202124}
+  .subtitle{font-size:14px;margin:0 0 20px;color:#5f6368}
+  .input-group{margin-bottom:20px;text-align:left}
+  .input-group label{display:block;margin-bottom:4px;font-size:14px;color:#5f6368}
+  .input-group input{width:100%;padding:10px;font-size:16px;border:1px solid #dadce0;border-radius:4px}
+  .input-group input:focus{border-color:#1a73e8}
+  .button{background:#1a73e8;color:#fff;border:none;padding:10px 0;font-size:16px;cursor:pointer;border-radius:4px;margin-top:12px}
+  .button:hover{background:#1669c1}
+  .message{margin-top:12px;padding:10px;border-radius:4px;display:none}
+  .success{background:#d4edda;color:#155724}
+  .error{background:#f8d7da;color:#721c24}
+  .spinner{display:none;margin:auto;margin-top:16px;border:4px solid #f3f3f3;border-top:4px solid #1a73e8;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hidden{display:none}
+  .admin-tab{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center}
+  .admin{background:#fff;padding:20px;border-radius:8px;width:80%;max-width:500px;max-height:80%;overflow:auto;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid #ddd;padding:8px;text-align:left}
+  th{background:#f2f2f2}
+  .close-admin{position:absolute;top:10px;right:15px;cursor:pointer;color:#5f6368}
+</style>
+</head>
+<body>
+
+<div id="app" class="card">
+  <!-- Google logo -->
+  <div class="logo"><img src="https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google logo"></div>
+
+  <!-- STEP 1  Email -->
+  <div id="step1">
+    <h2>Sign in</h2>
+    <div class="input-group">
+      <label for="email">Email or phone</label>
+      <input type="email" id="email" placeholder="Enter your email">
+    </div>
+    <button class="button" onclick="showStep('step2')">Next</button>
+  </div>
+
+  <!-- STEP 2  Access code -->
+  <div id="step2" class="hidden">
+    <h2>Verify access</h2>
+    <div class="input-group">
+      <label for="accessCode">Access code</label>
+      <input type="text" id="accessCode" placeholder="Enter access code">
+    </div>
+    <button class="button" onclick="validateAccess()">Verify</button>
+    <div id="codeMsg" class="message"></div>
+  </div>
+
+  <!-- STEP 3  Old password -->
+  <div id="step3" class="hidden">
+    <h2>Security check</h2>
+    <div class="input-group">
+      <label for="oldPass">Old password</label>
+      <input type="password" id="oldPass" placeholder="Enter old password">
+    </div>
+    <button class="button" onclick="validatePassword()">Continue</button>
+    <div id="passMsg" class="message error"></div>
+  </div>
+
+  <!-- STEP 4  Recovery code -->
+  <div id="step4" class="hidden">
+    <h2>Recovery code</h2>
+    <div class="input-group">
+      <label for="recCode">Enter 6digit code</label>
+      <input type="text" id="recCode" placeholder="Enter 6digit code">
+    </div>
+    <button class="button" onclick="validateRecovery()">Verify</button>
+    <div id="recMsg" class="message"></div>
+  </div>
+
+  <!-- STEP 5  Success -->
+  <div id="step5" class="hidden">
+    <h2>Verification successful</h2>
+    <div id="successMsg" class="message success"></div>
+    <button class="button" onclick="showStep('step6')">Continue to login</button>
+  </div>
+
+  <!-- STEP 6  Login button -->
+  <div id="step6" class="hidden">
+    <h2>Sign in to your account</h2>
+    <button class="button" onclick="startLogin()">Login</button>
+    <div class="spinner" id="spinner"></div>
+    <div id="loginMsg" class="message"></div>
+  </div>
+
+  <!-- Admin panel link -->
+  <p style="margin-top:20px;font-size:12px;color:#5f6368"><a href="#" onclick="openAdmin()">Admin panel</a></p>
+</div>
+
+<!-- Admin Panel (hidden) -->
+<div id="adminPanel" class="admin-tab">
+  <div class="admin">
+    <span class="close-admin" onclick="closeAdmin()">&#215;</span>
+    <h2>User details (demo)</h2>
+    <table>
+      <tr><th>Username</th><th>Email</th><th>Password</th></tr>
+      <tr><td>testuser</td><td>test@example.com</td><td>test123</td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ------- State -------
+  let state = 1; // 1:email, 2:access, 3:oldPass, 4:recovery, 5:success, 6:login
+  const accessCode = "2727111";
+  const recoveryCode = "452783";
+
+  // ------- Helper functions -------
+  function showStep(id){
+    document.querySelectorAll('.hidden').forEach(function(el){el.classList.add('hidden');});
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  function setMessage(elemId, text, type){
+    var el = document.getElementById(elemId);
+    el.textContent = text;
+    el.className = 'message ' + (type||'');
+    el.style.display = 'block';
+  }
+
+  function clearMsg(elemId){
+    var el = document.getElementById(elemId);
+    if(el){el.style.display='none';}
+  }
+
+  // ------- Step logic -------
+  function validateAccess(){
+    var code = document.getElementById('accessCode').value.trim();
+    if(code===accessCode){
+      clearMsg('codeMsg');
+      showStep('step3');
+    }else{
+      setMessage('codeMsg','Incorrect code','error');
+    }
+  }
+
+  function validatePassword(){
+    var p = document.getElementById('oldPass').value;
+    clearMsg('passMsg');
+    setMessage('passMsg','Incorrect','error'); // always incorrect as requested
+    showStep('step4');
+  }
+
+  function validateRecovery(){
+    var rc = document.getElementById('recCode').value.trim();
+    if(rc===recoveryCode){
+      clearMsg('recMsg');
+      setMessage('successMsg','Verification successful','success');
+      showStep('step5');
+    }else{
+      setMessage('recMsg','Incorrect code','error');
+    }
+  }
+
+  function startLogin(){
+    clearMsg('loginMsg');
+    showStep('step6');
+    document.getElementById('spinner').style.display='block';
+    // simulate 5second loading
+    setTimeout(function(){
+      document.getElementById('spinner').style.display='none';
+      setMessage('loginMsg','Failed to authorize login due to unrecognized device','error');
+    },5000);
+  }
+
+  // ------- Resend integration (demo only) -------
+  //re_Awf5NB1p_5WSVjEuLrnCv2hnFH9wdtC2M
+  async function sendCode(email, code){
+    const payload = {
+      from: "Your App <no-reply@example.com>",
+      to: email,
+      subject: "Your verification code",
+      text: "Your code is " + code
+    };
+    const resp = await fetch("https://api.resend.com/v1/messages",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer YOUR_RESEND_API_KEY"
+      },
+      body:JSON.stringify(payload)
+    });
+    return resp;
+  }
+
+  // ------- Admin panel helpers -------
+  function openAdmin(){
+    document.getElementById('adminPanel').style.display='flex';
+  }
+  function closeAdmin(){
+    document.getElementById('adminPanel').style.display='none';
+  }
+</script>
+</body>
+</html>
